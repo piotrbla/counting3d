@@ -30,9 +30,25 @@ int **F; // only ACGU
 int N;
 int DIM;
 
-char *RNA; // only ACGU
+int *RNA; // only ACGU
 
-void rand_seq(char *a, int size)
+int getValue(const char c)
+{
+  /*
+   *  'A' => 0 -> bitowo 0001 -> 1
+   *  'G' => 1 -> bitowo 0010 -> 2
+   *  'C' => 2 -> bitowo 0100 -> 4
+   *  'U' => 3 -> bitowo 1000 -> 8
+  */
+
+  if(c=='A')    return 1;
+  if(c=='G')    return 2;
+  if(c=='C')    return 4;
+  if(c=='U')    return 8;
+  return 16;
+}
+
+void rand_seq(int *seq, int size)
 {
   int i, tmp;
   int time_seed = 654322; //= time(NULL);
@@ -44,16 +60,16 @@ void rand_seq(char *a, int size)
     switch (tmp)
     {
     case 0:
-      a[i] = 'A';
+      seq[i] = getValue('A');
       break;
     case 1:
-      a[i] = 'G';
+      seq[i] = getValue('G');
       break;
     case 2:
-      a[i] = 'C';
+      seq[i] = getValue('C');
       break;
     case 3:
-      a[i] = 'U';
+      seq[i] = getValue('U');
       break;
     }
   }
@@ -70,26 +86,62 @@ int **mem(int size)
   return S;
 }
 
-int pared(int i, int j)
+int match(const int e1, const int e2)
 {
-  char nt1 = RNA[i];
-  char nt2 = RNA[j];
-  if ((nt1 == 'A' && nt2 == 'U') || (nt1 == 'U' && nt2 == 'A') ||
-      (nt1 == 'G' && nt2 == 'C') || (nt1 == 'C' && nt2 == 'G') ||
-      (nt1 == 'G' && nt2 == 'U') || (nt1 == 'U' && nt2 == 'G'))
-  {
+  /*
+   *  'A' => 0 -> bitowo 0001 -> 1
+   *  'G' => 1 -> bitowo 0010 -> 2
+   *  'C' => 2 -> bitowo 0100 -> 4
+   *  'U' => 3 -> bitowo 1000 -> 8
+  */
+  //const bool match =
+  //  (e1 == 0 && e2 == 3) || (e1 == 3 && e2 == 0) ||
+  //  (e1 == 1 && e2 == 2) || (e1 == 2 && e2 == 1) ||
+  //  (e1 == 1 && e2 == 3) || (e1 == 3 && e2 == 1);
+  //return match;
+  const int match =
+    (e1 + e2 == 9) ||
+    (e1 + e2 == 6) ||
+    (e1 + e2 == 10) ;
+  return match;
 
-    return 1;
-  }
-  else
-    return 0;
+  //(e1 == "A" && e2 == "U") ||
+  //(e1 == "U" && e2 == "A") ||
+  //(e1 == "G" && e2 == "C") ||
+  //(e1 == "C" && e2 == "G") ||
+  //(e1 == "G" && e2 == "U") ||
+  //(e1 == "U" && e2 == "G");
+
 }
+
+#define pared(i, j) (match(RNA[i], RNA[j]))
+
+//int pared(int i, int j)
+// {
+//   char nt1 = RNA[i];
+//   char nt2 = RNA[j];
+//   if ((nt1 == 'A' && nt2 == 'U') || (nt1 == 'U' && nt2 == 'A') ||
+//       (nt1 == 'G' && nt2 == 'C') || (nt1 == 'C' && nt2 == 'G') ||
+//       (nt1 == 'G' && nt2 == 'U') || (nt1 == 'U' && nt2 == 'G'))
+//   {
+
+//     return 1;
+//   }
+//   else
+//     return 0;
+// }
 int paired(int i, int j)
 {
   return pared(i, j);
 }
 
 void test_fun(int kind);
+void free2dmem(int **S, int size)
+{
+  for (int i = 0; i < size; i++)
+    free(S[i]);
+  free(S);
+}
 void do_one_step(int step_size, int kind)
 {
   N = step_size;
@@ -105,10 +157,13 @@ void do_one_step(int step_size, int kind)
       ck[i][j] = 1;
     }
   }
-  RNA = (char *)malloc(DIM * sizeof(char *));
+  RNA = (int *)malloc(DIM * sizeof(char *));
   rand_seq(RNA, N);
   test_fun(kind);
   free(RNA);
+  free2dmem(F, DIM);
+  free2dmem(c, DIM);
+  free2dmem(ck, DIM);
 }
 void do_one_step_all_kinds(int step_size)
 {
@@ -135,12 +190,12 @@ int main(int argc, char *argv[])
   //do_one_step(step_size, KIND_3D);
   //do_one_step(step_size, KIND_3D_16);
 
-  for (num_proc = 32; num_proc <= 32; num_proc*=2)
+  for (num_proc = 16; num_proc <= 32; num_proc*=2)
   {
     printf("num_proc = %d\nN___;ORIGIN;NON3D_;PLUTO_;TRACO_;3D____;3D_16_;DAPT__;\n", num_proc);
   
     omp_set_num_threads(num_proc);
-    for (int i = 500; i <= 9500; i += 500)
+    for (int i = 500; i <= 12000; i += 500)
     {
       do_one_step_all_kinds(i);
       printf("\n");
@@ -383,23 +438,23 @@ void test_fun(int kind)
     }
   }
   //write c to file with the timestamp as name
-  char filename[100];
-  char timestamp[50];
-  FILE *fp;
-  time_t t = time(NULL);
-  struct tm tm = *localtime(&t);
-  sprintf(timestamp, "%d_%d_%d_%d_%d_%d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
-  sprintf(filename, "c_%d_%d_%s.txt", N, kind, timestamp);
-  fp = fopen(filename, "w");
-  for (int i = 0; i < N; i++)
-  {
-    for (int j = 0; j < N; j++)
-    {
-      fprintf(fp, "%6d ", c[i][j]);
-    }
-    fprintf(fp, "\n");
-  }
-  fclose(fp);
+  // char filename[100];
+  // char timestamp[50];
+  // FILE *fp;
+  // time_t t = time(NULL);
+  // struct tm tm = *localtime(&t);
+  // sprintf(timestamp, "%d_%d_%d_%d_%d_%d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+  // sprintf(filename, "c_%d_%d_%s.txt", N, kind, timestamp);
+  // fp = fopen(filename, "w");
+  // for (int i = 0; i < N; i++)
+  // {
+  //   for (int j = 0; j < N; j++)
+  //   {
+  //     fprintf(fp, "%6d ", c[i][j]);
+  //   }
+  //   fprintf(fp, "\n");
+  // }
+  // fclose(fp);
   return;
 
   // for (i = 0; i < DIM; i++)
