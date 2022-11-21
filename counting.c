@@ -169,7 +169,7 @@ void do_one_step_all_kinds(int step_size)
 {
   printf("%4d;", step_size);
   do_one_step(step_size, KIND_ORIGINAL);
-  do_one_step(step_size, KIND_NON3D);
+  //do_one_step(step_size, KIND_NON3D);
   do_one_step(step_size, KIND_PLUTO);
   do_one_step(step_size, KIND_TRACO);
   do_one_step(step_size, KIND_3D);
@@ -192,7 +192,7 @@ int main(int argc, char *argv[])
 
   for (num_proc = 16; num_proc <= 32; num_proc*=2)
   {
-    printf("num_proc = %d\nN___;ORIGIN;NON3D_;PLUTO_;TRACO_;3D____;3D_16_;DAPT__;\n", num_proc);
+    printf("num_proc = %d\nN___;ORIGINNNN;PLUTO_;TRACO_;3D____;3D_16_;DAPT__;\n", num_proc);
   
     omp_set_num_threads(num_proc);
     for (int i = 500; i <= 12000; i += 500)
