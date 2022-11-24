@@ -1,0 +1,40 @@
+## checking schedule validity
+
+# dependence relations returned with PET
+
+F:=[N] -> { S_1[i, j] -> S_0[i' = i, j', k = 1 + j] : i > 0 and j >= 2 + i and 2 + j <= j' <= N; S_1[i, j] -> S_0[i', j' = 1 + j, k = -1 + i] : 2 + i <= j < N and 0 < i' < i; S_0[i, j, k] -> S_1[i' = i, j'] : i > 0 and j >= 2 + i and i <= k < j and j <= j' <= 1 + j and j' <= N; S_0[i, j, k] -> S_0[i' = i, j', k' = 1 + j] : i > 0 and j >= 2 + i and i <= k < j and 2 + j <= j' <= N; S_0[i, j, k] -> S_0[i' = i, j' = j, k'] : i > 0 and j <= N and k >= i and k < k' < j; S_0[i, j, k] -> S_0[i', j' = 1 + j, k' = -1 + i] : 2 + i <= j < N and i <= k < j and 0 < i' < i; S_1[i, j] -> S_1[i' = i, j' = 1 + j] : i > 0 and 2 + i <= j < N }; 
+
+# eliminating reduction dependences 
+
+F:=F- { S_0[i, j, k]-> S_0[i, j, k']: k'>k};
+
+# iteration domains returned with PET:
+D:=[N] -> { S_0[i, j, k] : i > 0 and 2 + i <= j <= N and i <= k < j; S_1[i, j] : i > 0 and 2 + i <= j <= N }; 
+
+# schedules to generate transformed code
+S:=[N]->{S_0[i,j,k]-> [t=max(k-i-1, j-k-2)+1, -i,j,0,k  ]: t<= j-i-1; S_1[i,j]-> [t,-i,j, 1,0] : exists k: (t=max(k-i-1, j-k-2)+1 and t= j-i-1) }*D;
+
+
+
+# calculation of relation R
+R:= (S^-1) . F . S;
+print "R";
+R;
+
+
+# calculation of distance vectors in a target iteration space
+DEL:=deltas R;
+print "DEL";
+DEL;
+
+
+# calculation of set LD5
+LD55:=[N]->{ [t,i0,i1,i2,i3]:   t<0  or ( t=0 and i0<0)     or (t=0 and i0=0 and i1<0)
+or (t=0 and i0=0 and i1=0 and  i2<0) or (t=0 and i0=0 and i1=0 and  i2=0  and i3<1)
+};
+
+
+
+# check wether there exist lexicographically negative vectors represented with set DEL
+DEL *LD55;
+
